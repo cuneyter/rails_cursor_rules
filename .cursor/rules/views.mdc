@@ -1,0 +1,93 @@
+---
+description: View-specific rules for Ruby on Rails projects
+globs: app/views/**.{erb,haml,slim}
+alwaysApply: false
+---
+# View-specific rules for Ruby on Rails projects
+
+# Identify and categorize view files
+pattern:app/views/**.html.erb -> view
+pattern:app/views/**.erb -> view
+pattern:app/views/**.html.haml -> view
+pattern:app/views/**.haml -> view
+pattern:app/views/**.html.slim -> view
+pattern:app/views/**.slim -> view
+pattern:app/views/layouts/**.html.erb -> layout
+pattern:app/views/layouts/**.erb -> layout
+pattern:app/views/layouts/**.html.haml -> layout
+pattern:app/views/layouts/**.haml -> layout
+pattern:app/views/layouts/**.html.slim -> layout
+pattern:app/views/layouts/**.slim -> layout
+pattern:app/views/partials/**.html.erb -> partial
+pattern:app/views/partials/**.erb -> partial
+pattern:app/views/partials/**.html.haml -> partial
+pattern:app/views/partials/**.haml -> partial
+pattern:app/views/partials/**.html.slim -> partial
+pattern:app/views/partials/**.slim -> partial
+pattern:app/components/**.html.erb -> component
+pattern:app/components/**.rb -> component_class
+
+# Include context for application layout and helpers
+context:view -> include:app/views/layouts/application.html.erb
+context:view -> include:app/views/layouts/application.html.haml
+context:view -> include:app/views/layouts/application.html.slim
+context:view -> include:app/helpers/application_helper.rb
+
+# Connect views with their controllers, models, and related files
+context:view -> include:app/controllers/{{ parent_dir }}_controller.rb
+context:view -> include:app/helpers/{{ parent_dir }}_helper.rb
+context:view -> include:app/models/{{ singular_parent_dir }}.rb
+context:view -> include:app/javascript/controllers/{{ parent_dir }}_controller.js
+
+# Navigation rules for common views
+jump:view users/index -> app/views/users/index.html.erb
+jump:view posts/show -> app/views/posts/show.html.erb
+jump:layout application -> app/views/layouts/application.html.erb
+
+# Rules for view-related helpers and methods
+hint:view_helpers -> include:
+    - form_for
+    - form_with
+    - link_to
+    - image_tag
+    - render
+    - partial
+    - content_for
+    - yield
+    - turbo_frame_tag
+    - turbo_stream_tag
+    - turbo_stream_from
+    - stimulus_controller
+    - data: { controller: }
+
+# Scope for finding view rules
+scope:view -> 
+    - app/views
+    - app/views/layouts
+    - app/views/shared
+    - app/views/partials
+    - app/components
+
+# Connect with partials
+hint:partial_association -> look_for:
+    - render partial:
+    - render "shared/
+    - render 'shared/
+    - render :partial =>
+    - render(partial:
+    - render(component:
+    - render(ViewComponents::
+
+# Connect with asset helpers
+context:view -> include:app/assets/stylesheets/**.scss
+context:view -> include:app/assets/javascripts/**.js
+context:view -> include:app/javascript/packs/**.js
+context:view -> include:app/javascript/controllers/**.js
+
+# Hotwire and Stimulus connections
+hint:hotwire_patterns -> look_for:
+    - <turbo-frame id=
+    - <turbo-stream action=
+    - data-controller=
+    - data-action=
+    - data-target=

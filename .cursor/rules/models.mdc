@@ -1,0 +1,82 @@
+---
+description: Model specific rules for Ruby on Rails projects
+globs: app/models/**.rb
+alwaysApply: false
+---
+# Model-specific rules for Ruby on Rails projects
+
+# Identify and categorize model files
+pattern:app/models/**.rb -> model
+
+# Include context for base model classes
+context:model -> include:app/models/application_record.rb
+
+# Add include rules for common model-related files
+context:model -> include:app/models/concerns/**/*.rb
+context:model -> include:app/models/*/base.rb
+
+# Navigation rules for specific models
+jump:model User -> app/models/user.rb
+jump:model Post -> app/models/post.rb
+
+# Rules for model-related files
+hint:associations -> include:
+    - has_many
+    - has_one
+    - belongs_to
+    - has_and_belongs_to_many
+
+hint:validations -> include:
+    - validates
+    - validate
+    - validates_presence_of
+    - validates_uniqueness_of
+
+hint:enums -> include:
+    - enum
+    - enum_accessor
+
+# Scope for finding model rules
+scope:model -> 
+    - app/models
+    - lib/models
+    - app/models/concerns
+
+# Additional context hints
+hint:model_methods -> look_for:
+    - def self.
+    - scope :
+    - class_method
+
+hint:query_scopes -> include:
+    - where
+    - order
+    - limit
+    - joins
+    - includes
+    - eager_load
+    - preload
+
+hint:callbacks -> include:
+    - before_save
+    - after_save
+    - before_create
+    - after_create
+    - before_update
+    - after_update
+    - before_destroy
+    - after_destroy
+
+hint:serialization -> include:
+    - serialize
+    - store
+    - store_accessor
+
+hint:delegation -> include:
+    - delegate
+    - delegated_type
+    
+# Context for test file
+context:model -> include:spec/models/**/*.rb
+<!-- context:model -> include:test/models/**/*.rb -->
+ 

@@ -1,0 +1,97 @@
+---
+description: Controller-specific rules for Ruby on Rails projects
+globs: app/controllers/**.rb
+alwaysApply: false
+---
+# Controller-specific rules for Ruby on Rails projects
+
+# Identify and categorize controller files
+pattern:app/controllers/**.rb -> controller
+pattern:app/controllers/**_controller.rb -> specific_controller
+
+# Identify and categorize API controller files
+pattern:app/controllers/api/**/**.rb -> api_controller
+context:api_controller -> include:app/controllers/api/base_controller.rb
+
+# Include context for base controller classes and helpers
+context:controller -> include:app/controllers/application_controller.rb
+context:controller -> include:app/helpers/application_helper.rb
+context:controller -> include:app/controllers/concerns/*.rb
+
+# Namespaced controller handling
+pattern:app/controllers/**/**_controller.rb -> namespaced_controller
+context:namespaced_controller -> include:app/views/{{ namespace }}/{{ basename }}/**.erb
+
+# Connect controllers with their views and related files
+context:specific_controller -> include:app/views/{{ basename }}/**.erb
+<!-- context:specific_controller -> include:app/views/{{ basename }}/**.haml -->
+context:specific_controller -> include:app/helpers/{{ basename }}_helper.rb
+
+# Navigation rules for common controllers
+jump:controller Users -> app/controllers/users_controller.rb
+jump:controller Sessions -> app/controllers/sessions_controller.rb
+jump:controller Admin -> app/controllers/admin_controller.rb
+
+# Rules for controller-related methods
+hint:actions -> include:
+    - def index
+    - def show
+    - def new
+    - def create
+    - def edit
+    - def update
+    - def destroy
+
+hint:filters -> include:
+    - before_action
+    - after_action
+    - around_action
+    - skip_before_action
+    - skip_after_action
+    - skip_around_action
+    - before_filter
+    - after_filter
+    - around_filter
+    - skip_before_filter
+    - skip_after_filter
+    - skip_around_filter
+
+hint:controller_patterns -> include:
+    - respond_to
+    - render
+    - redirect_to
+    - flash[:notice]
+    - flash[:alert]
+    - params.require(:{{ model_name }}).permit(:attr1, :attr2)
+    - render json: @{{ resource }}
+    - render json: { error: '{{ message }}' }, status: :{{ status }}
+    - respond_to do |format|
+
+# Scope for finding controller rules
+scope:controller -> 
+    - app/controllers
+    - app/controllers/concerns
+    - app/controllers/api
+
+# Connect controllers with routes
+context:controller -> include:config/routes.rb
+
+# Connect with models being manipulated
+hint:controller_model_association -> look_for:
+    - @{{ singular_name }} = {{ model_name }}.find
+    - @{{ plural_name }} = {{ model_name }}.all
+    - @{{ singular_name }} = {{ model_name }}.new({{ singular_name }}_params)
+    - @{{ singular_name }}.update({{ singular_name }}_params)
+    - @{{ singular_name }}.destroy
+    - @{{ plural_name }} = {{ model_name }}.includes(:{{ association }})
+    - @{{ plural_name }} = {{ model_name }}.joins(:{{ association }})
+    - @{{ plural_name }} = {{ model_name }}.where({{ conditions }})
+    - @{{ singular_name }} = {{ model_name }}.find_by({{ conditions }})
+
+# Patterns for Stimulus controllers:
+pattern:app/javascript/controllers/**.js -> stimulus_controller
+context:specific_controller -> include:app/javascript/controllers/{{ basename }}_controller.js    
+
+# Connections to controller tests:
+context:specific_controller -> include:spec/controllers/{{ basename }}_controller_spec.rb
+<!-- context:specific_controller -> include:test/controllers/{{ basename }}_controller_test.rb    -->

@@ -1,0 +1,148 @@
+---
+description: Migration-specific rules for Ruby on Rails projects
+globs: db/migrate/**.rb
+alwaysApply: false
+---
+# Migration-specific rules for Ruby on Rails projects
+
+# Identify and categorize migration files
+pattern:db/migrate/**.rb -> migration
+pattern:db/migrate/*_create_*.rb -> create_table_migration
+pattern:db/migrate/*_add_*.rb -> add_column_migration
+pattern:db/migrate/*_remove_*.rb -> remove_column_migration
+pattern:db/migrate/*_change_*.rb -> change_column_migration
+pattern:db/migrate/*_join_*.rb -> join_table_migration
+pattern:db/migrate/*_add_foreign_key_*.rb -> foreign_key_migration
+pattern:db/migrate/*_add_index_*.rb -> index_migration
+
+# Include context for schema and model files
+context:migration -> include:db/schema.rb
+context:migration -> include:db/seeds.rb
+context:migration -> include:config/database.yml
+
+# Connect create table migrations with their models
+context:create_table_migration -> look_for:
+    - create_table :{{ table_name }}
+    - app/models/{{ singular_table_name }}.rb
+
+# Connect join table migrations with their models
+context:join_table_migration -> look_for:
+    - create_join_table :{{ table_one }}, :{{ table_two }}
+    - app/models/{{ singular_table_one }}.rb
+    - app/models/{{ singular_table_two }}.rb
+
+# Navigation shortcuts for schema and common migrations
+jump:schema -> db/schema.rb
+jump:seeds -> db/seeds.rb
+jump:latest_migration -> db/migrate/[0-9]*_*.rb
+
+# Rules for migration-related methods
+hint:migration_methods -> include:
+    - create_table
+    - drop_table
+    - create_join_table
+    - add_column
+    - remove_column
+    - change_column
+    - rename_column
+    - change_column_default
+    - change_column_null
+    - add_index
+    - remove_index
+    - rename_index
+    - add_reference
+    - add_belongs_to
+    - remove_reference
+    - remove_belongs_to
+    - add_timestamps
+    - remove_timestamps
+    - add_foreign_key
+    - remove_foreign_key
+    - execute
+    - reversible
+    - up
+    - down
+
+# Column type hints
+hint:column_types -> include:
+    - :string
+    - :text
+    - :integer
+    - :bigint
+    - :float
+    - :decimal
+    - :datetime
+    - :timestamp
+    - :time
+    - :date
+    - :binary
+    - :boolean
+    - :json
+    - :jsonb
+    - :array
+    - :references
+    - :uuid
+    - :citext
+    - :hstore
+    - :inet
+    - :macaddr
+    - :point
+    - :line
+    - :polygon
+
+# Migration options hints
+hint:migration_options -> include:
+    - null: false
+    - default:
+    - precision:
+    - scale:
+    - limit:
+    - index:
+    - unique:
+    - foreign_key:
+    - comment:
+    - if_exists:
+    - if_not_exists:
+    - force:
+    - id: false
+    - primary_key:
+    - polymorphic: true
+    - type:
+
+# Index options
+hint:index_options -> include:
+    - unique: true
+    - name: "{{ index_name }}"
+    - where: "{{ condition }}"
+    - using: :{{ index_type }}
+    - order: { {{ column }}: :{{ direction }} }
+    - length: { {{ column }}: {{ length }} }
+    - opclass: :{{ operator_class }}
+    - algorithm: :{{ algorithm_type }}
+
+# Foreign key options
+hint:foreign_key_options -> include:
+    - on_delete: :{{ action }}
+    - on_update: :{{ action }}
+    - primary_key: "{{ column }}"
+    - name: "{{ constraint_name }}"
+    - validate: {{ boolean }}
+
+# Scope for finding migration files
+scope:migration -> 
+    - db/migrate
+    - db
+
+# Versioning support
+hint:migration_versioning -> look_for:
+    - class {{ MigrationName }} < ActiveRecord::Migration[{{ version }}]
+
+# Polymorphic associations
+hint:polymorphic_associations -> look_for:
+    - t.references :{{ name }}, polymorphic: true
+    - add_reference :{{ table }}, :{{ name }}, polymorphic: true
+
+# STI (Single Table Inheritance)
+hint:single_table_inheritance -> look_for:
+    - t.string :type
+    - add_column :{{ table }}, :type, :string

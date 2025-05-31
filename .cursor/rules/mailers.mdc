@@ -1,0 +1,71 @@
+---
+description: Mailer-specific rules for Ruby on Rails projects
+globs: app/mailers/**.rb
+alwaysApply: false
+---
+# Mailer-specific rules for Ruby on Rails projects
+
+# Identify and categorize mailer files
+pattern:app/mailers/**.rb -> mailer
+pattern:app/mailers/**_mailer.rb -> specific_mailer
+pattern:app/mailers/application_mailer.rb -> application_mailer
+
+# Include context for application mailer and related files
+context:mailer -> include:app/mailers/application_mailer.rb
+context:mailer -> include:config/application.rb
+
+# Connect mailers with their views
+context:specific_mailer -> include:app/views/{{ basename }}/**.*
+context:specific_mailer -> include:app/views/layouts/mailer.*
+
+# Navigation shortcuts for mailer files
+jump:mailer application -> app/mailers/application_mailer.rb
+jump:mailer_view -> app/views/{{ mailer_name }}/{{ action_name }}.*
+
+# Rules for mailer-related methods
+hint:mailer_methods -> include:
+    - mail
+    - default
+    - attachments
+    - deliver_now
+    - deliver_later
+    - headers
+    - from
+    - to
+    - cc
+    - bcc
+    - subject
+
+# Mailer pattern hints
+hint:mailer_patterns -> look_for:
+    - class {{ mailer_name }}Mailer < ApplicationMailer
+    - mail(to:
+    - mail to:
+    - layout
+
+# Scope for finding mailer files
+scope:mailer -> 
+    - app/mailers
+    - app/views/layouts/mailer.*
+    - app/views/mailers/
+
+# Connect with models that might use mailers
+hint:model_mailer_usage -> look_for:
+    - {{ mailer_name }}Mailer.
+    - deliver_later
+    - deliver_now
+
+# Connect with jobs that trigger mailers
+hint:job_mailer_usage -> look_for:
+    - {{ mailer_name }}Mailer.
+    - deliver_later
+
+# Connect with email configuration
+context:mailer -> include:config/environments/development.rb
+context:mailer -> include:config/environments/production.rb
+context:mailer -> include:config/initializers/smtp.rb
+context:mailer -> include:config/initializers/email.rb
+
+# Connect with email templates
+context:mailer -> include:app/views/layouts/mailer.html.erb
+context:mailer -> include:app/views/layouts/mailer.text.erb

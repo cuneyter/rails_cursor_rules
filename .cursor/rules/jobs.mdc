@@ -1,0 +1,122 @@
+---
+description: Job-specific rules for Ruby on Rails projects
+globs: app/jobs/**.rb
+alwaysApply: false
+---
+# Job-specific rules for Ruby on Rails projects
+
+# Identify and categorize job files
+pattern:app/jobs/**.rb -> job
+pattern:app/jobs/application_job.rb -> application_job
+pattern:app/sidekiq/**.rb -> sidekiq_worker
+pattern:app/workers/**.rb -> worker
+
+# Include context for application job and related files
+context:job -> include:app/jobs/application_job.rb
+context:job -> include:config/sidekiq.yml
+context:job -> include:config/sidekiq.rb
+context:job -> include:config/delayed_job.rb
+context:job -> include:config/resque.yml
+context:job -> include:config/good_job.yml
+
+# Connect jobs with their related models or services
+hint:job_relationship -> look_for:
+    - {{ model_name }}.find
+    - {{ service_name }}.new
+
+# Connect jobs with controllers that enqueue them
+hint:controller_job_usage -> look_for:
+    - {{ job_name }}Job.perform_later
+    - {{ job_name }}Job.set
+    - {{ job_name }}Worker.perform_async
+
+# Navigation shortcuts for job files
+jump:job application -> app/jobs/application_job.rb
+jump:worker sidekiq -> config/sidekiq.yml
+
+# Rules for job-related methods
+hint:job_methods -> include:
+    - perform
+    - perform_later
+    - set
+    - queue_as
+    - retry_on
+    - discard_on
+    - sidekiq_options
+    - wait
+    - wait_until
+    - enqueue_at
+    - cron
+    - jid
+
+# Active Job queue adapter hints
+context:job -> include:config/application.rb
+context:job -> include:config/environments/development.rb
+context:job -> include:config/environments/production.rb
+
+# Job pattern hints
+hint:job_patterns -> look_for:
+    - class {{ job_name }}Job < ApplicationJob
+    - class {{ worker_name }}Worker
+    - include Sidekiq::Worker
+    - include Sidekiq::Job
+    - sidekiq_options queue:
+    - sidekiq_options retry:
+    - sidekiq_retry_in do |count|
+    - sidekiq_retries_exhausted do |msg, ex|
+
+# Scope for finding job files
+scope:job ->
+    - app/jobs
+    - app/workers
+    - app/sidekiq
+
+# Connect with mailers if job is sending emails
+hint:mailer_job -> look_for:
+    - {{ mailer_name }}Mailer
+    - deliver_later
+
+# Connect with scheduled jobs
+context:job -> include:config/schedule.rb
+context:job -> include:config/clockwork.rb
+context:job -> include:config/initializers/sidekiq.rb
+context:job -> include:config/sidekiq_cron.yml
+
+# Job scheduling patterns
+hint:job_scheduling -> look_for:
+    - cron: "{{ cron_expression }}"
+    - every({{ time_period }})
+    - schedule.every('{{ time_period }}')
+    - sidekiq_options cron: "{{ cron_expression }}"
+    - perform_at({{ time }})
+    - perform_in({{ duration }})
+
+# Error handling patterns
+hint:job_error_handling -> look_for:
+    - retry_on {{ exception_class }}
+    - discard_on {{ exception_class }}
+    - sidekiq_retry_in do |count|
+    - sidekiq_retries_exhausted do |msg, ex|
+    - rescue {{ exception_class }} => e
+    - begin/rescue/ensure
+
+# Job arguments and serialization
+hint:job_arguments -> look_for:
+    - serialize :{{ attribute }}
+    - GlobalID::Identification
+    - arguments: :serialized
+    - def perform({{ arguments }})
+    - perform_later({{ arguments }})
+
+# Testing connections
+context:job -> include:test/jobs/{{ job_name }}_job_test.rb
+context:job -> include:spec/jobs/{{ job_name }}_job_spec.rb
+
+# Performance monitoring
+hint:job_monitoring -> look_for:
+    - ActiveSupport::Notifications.instrument
+    - Sidekiq::Stats
+    - Sidekiq.logger
+    - Rails.logger
+    - NewRelic::Agent
+    - Datadog::Tracing

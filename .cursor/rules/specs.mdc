@@ -1,0 +1,199 @@
+---
+description: RSpec-specific rules for Ruby on Rails projects
+globs: spec/**/*.rb
+alwaysApply: false
+---
+# RSpec-specific rules for Ruby on Rails projects
+
+# Identify and categorize spec files
+pattern:spec/models/**.rb -> model_spec
+pattern:spec/controllers/**.rb -> controller_spec
+pattern:spec/requests/**.rb -> request_spec
+pattern:spec/system/**.rb -> system_spec
+pattern:spec/features/**.rb -> feature_spec
+pattern:spec/views/**.rb -> view_spec
+pattern:spec/helpers/**.rb -> helper_spec
+pattern:spec/mailers/**.rb -> mailer_spec
+pattern:spec/jobs/**.rb -> job_spec
+pattern:spec/services/**.rb -> service_spec
+pattern:spec/support/**.rb -> spec_support
+pattern:spec/factories/**.rb -> factory
+pattern:spec/fixtures/**.yml -> fixture
+pattern:spec/serializers/**.rb -> serializer_spec
+
+# Include context for spec helper files
+context:model_spec -> include:spec/rails_helper.rb
+context:model_spec -> include:spec/spec_helper.rb
+context:model_spec -> include:spec/support/**.rb
+context:model_spec -> include:spec/factories/**.rb
+
+# Connect specs with their implementation files
+context:model_spec -> include:app/models/{{ basename without '_spec' }}.rb
+context:controller_spec -> include:app/controllers/{{ basename without '_spec' }}_controller.rb
+context:request_spec -> include:app/controllers/{{ basename without '_spec' }}_controller.rb
+context:helper_spec -> include:app/helpers/{{ basename without '_spec' }}_helper.rb
+context:view_spec -> include:app/views/{{ parent_dir }}/{{ basename without '_spec' }}.*
+context:mailer_spec -> include:app/mailers/{{ basename without '_spec' }}_mailer.rb
+context:job_spec -> include:app/jobs/{{ basename without '_spec' }}_job.rb
+context:service_spec -> include:app/services/{{ basename without '_spec' }}_service.rb
+
+# Navigation shortcuts for spec files
+jump:spec_helper -> spec/spec_helper.rb
+jump:rails_helper -> spec/rails_helper.rb
+jump:factory_bot -> spec/support/factory_bot.rb
+jump:shoulda -> spec/support/shoulda.rb
+
+# Rules for RSpec-related methods
+hint:rspec_methods -> include:
+    - describe
+    - context
+    - it
+    - specify
+    - before
+    - after
+    - let
+    - let!
+    - subject
+    - expect
+    - allow
+    - to
+    - not_to
+    - to_not
+    - create
+    - build
+    - build_stubbed
+
+# Matcher hints
+hint:rspec_matchers -> include:
+    - eq
+    - include
+    - match
+    - match_array
+    - have_attributes
+    - be_valid
+    - be_invalid
+    - be_truthy
+    - be_falsey
+    - be_nil
+    - change
+    - raise_error
+    - have_http_status
+    - render_template
+    - redirect_to
+    - assign
+    - set_flash
+    - respond_with
+    - permit
+
+# Factory Bot hints
+hint:factory_bot -> include:
+    - FactoryBot.define
+    - factory
+    - trait
+    - association
+    - sequence
+    - after(:build)
+    - after(:create)
+
+# Scope for finding spec files
+scope:spec -> 
+    - spec
+    - spec/support
+    - spec/factories
+    - spec/fixtures
+
+# Connect with shared examples and contexts
+context:spec -> include:spec/support/shared_examples/**.*
+context:spec -> include:spec/support/shared_contexts/**.*
+
+# Connect with test database configuration
+context:spec -> include:config/database.yml
+context:spec -> include:config/environments/test.rb
+
+# Shared examples and contexts patterns
+hint:shared_examples -> look_for:
+    - shared_examples
+    - shared_examples_for
+    - it_behaves_like
+    - include_examples
+    - shared_context
+    - include_context
+
+# Mocking and stubbing patterns
+hint:mocking_stubbing -> look_for:
+    - allow({{ object }}).to receive({{ method }})
+    - expect({{ object }}).to receive({{ method }})
+    - double
+    - instance_double
+    - class_double
+    - object_double
+    - spy
+    - have_received
+    - and_return
+    - and_raise
+    - and_throw
+    - and_yield
+    - and_call_original
+
+# System and feature spec patterns
+hint:system_feature_specs -> look_for:
+    - visit
+    - click_on
+    - click_link
+    - click_button
+    - fill_in
+    - select
+    - check
+    - uncheck
+    - choose
+    - attach_file
+    - page
+    - have_content
+    - have_css
+    - have_selector
+    - have_field
+    - have_link
+    - have_button
+    - driven_by
+    - js: true
+
+# Factory Bot patterns
+hint:factory_bot_patterns -> look_for:
+    - factory :{{ model_name }} do
+    - trait :{{ trait_name }} do
+    - association :{{ association_name }}
+    - sequence(:{{ attribute }}) { |n| }
+    - after(:build) do |{{ model }}|
+    - after(:create) do |{{ model }}|
+    - transient do
+
+# Test data setup patterns
+hint:test_data_setup -> look_for:
+    - fixtures :{{ fixture_names }}
+    - before(:each) do
+    - before(:all) do
+    - DatabaseCleaner.strategy =
+    - DatabaseCleaner.clean
+    - DatabaseCleaner.start
+    - ActiveRecord::FixtureSet.identify(:{{ fixture_name }})
+    - Faker::{{ faker_generator }}
+    - Fabricate(:{{ model_name }})
+    - Fabricate.build(:{{ model_name }})
+
+# Custom matchers
+hint:custom_matchers -> look_for:
+    - RSpec::Matchers.define :{{ matcher_name }} do
+    - matcher :{{ matcher_name }} do
+    - chain :{{ chain_name }} do
+    - failure_message
+    - failure_message_when_negated
+    - description
+
+# Test metadata and filtering
+hint:test_metadata -> look_for:
+    - it "{{ description }}", :{{ tag }} do
+    - describe "{{ description }}", :{{ tag }} do
+    - context "{{ description }}", :{{ tag }} do
+    - RSpec.configure do |config|
+    - config.filter_run
+    - config.run_all_when_everything_filtered

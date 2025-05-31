@@ -1,0 +1,77 @@
+---
+description: Helper-specific rules for Ruby on Rails projects
+globs: app/helpers/**.rb
+alwaysApply: false
+---
+# Helper-specific rules for Ruby on Rails projects
+
+# Identify and categorize helper files
+pattern:app/helpers/**.rb -> helper
+pattern:app/helpers/**_helper.rb -> specific_helper
+pattern:app/helpers/application_helper.rb -> application_helper
+
+# Include context for application helper and related files
+context:helper -> include:app/helpers/application_helper.rb
+context:helper -> include:app/controllers/application_controller.rb
+
+# Connect specific helpers with their controllers and views
+context:specific_helper -> include:app/controllers/{{ basename without '_helper' }}_controller.rb
+context:specific_helper -> include:app/views/{{ basename without '_helper' }}/**.*
+
+# Navigation shortcuts for common helpers
+jump:helper application -> app/helpers/application_helper.rb
+jump:helper users -> app/helpers/users_helper.rb
+
+# Rules for helper-related methods
+hint:helper_methods -> include:
+    - content_tag
+    - tag
+    - link_to
+    - button_to
+    - image_tag
+    - form_with
+    - form_for
+    - form_tag
+    - sanitize
+    - truncate
+    - pluralize
+    - number_to_currency
+    - number_to_percentage
+    - time_ago_in_words
+    - distance_of_time_in_words
+    - capture
+    - concat
+    - render
+    - javascript_include_tag
+    - stylesheet_link_tag
+    - current_page?
+    - url_for
+    - asset_path
+    - asset_url
+
+# View helper pattern hints
+hint:helper_patterns -> look_for:
+    - def {{ method_name }}
+    - module {{ module_name }}Helper
+    - include ActionView::Helpers::
+    - delegate 
+
+# Scope for finding helper files
+scope:helper -> 
+    - app/helpers
+    - lib/helpers
+
+# Connect with related view concerns and formatting
+context:helper -> include:app/views/layouts/_*.erb
+context:helper -> include:app/views/layouts/_*.haml
+context:helper -> include:app/views/layouts/_*.slim
+context:helper -> include:app/views/shared/_*.erb
+context:helper -> include:app/views/shared/_*.haml
+context:helper -> include:app/views/shared/_*.slim
+
+# Connect with asset helpers
+context:helper -> include:app/assets/stylesheets/**.scss
+context:helper -> include:app/javascript/packs/application.js
+context:helper -> include:app/javascript/controllers/**.*
+context:helper -> include:app/javascript/components/**.*
+context:helper -> include:app/assets/builds/**.*

@@ -1,0 +1,148 @@
+---
+description: Service-specific rules for Ruby on Rails projects
+globs: app/services/**.rb
+alwaysApply: false
+---
+# Service-specific rules for Ruby on Rails projects
+
+# Identify and categorize service files
+pattern:app/services/**.rb -> service
+pattern:app/services/**_service.rb -> specific_service
+pattern:app/services/**/base_service.rb -> base_service
+pattern:lib/services/**.rb -> lib_service
+
+# Include context for base service and related files
+context:service -> include:app/services/application_service.rb
+context:service -> include:app/services/base_service.rb
+
+# Connect services with their related models
+hint:service_model_relationship -> look_for:
+    - {{ model_name }}.find
+    - {{ model_name }}.where
+    - {{ model_name }}.new
+    - {{ model_name }}.create
+    - {{ model_name }}.update
+    - {{ model_name }}.destroy
+    - @{{ model_name.underscore }}.association
+
+# Navigation shortcuts for service files
+jump:service base -> app/services/base_service.rb
+jump:service application -> app/services/application_service.rb
+
+# Rules for service-related methods
+hint:service_methods -> include:
+    - call
+    - perform
+    - execute
+    - run
+    - process
+    - initialize
+    - self.call
+    - private
+
+# Service pattern hints
+hint:service_patterns -> look_for:
+    - class {{ service_name }}Service
+    - class {{ service_name }}
+    - module Services
+    - attr_reader
+    - def call
+    - def perform
+    - def initialize
+
+# Scope for finding service files
+scope:service -> 
+    - app/services
+    - lib/services
+    - app/lib/services
+
+# Connect with controllers that use services
+hint:controller_service_usage -> look_for:
+    - {{ service_name }}Service.call
+    - {{ service_name }}Service.new
+    - {{ service_name }}.call
+    - {{ service_name }}.new
+
+# Connect with related service components
+context:service -> include:app/services/concerns/**.rb
+context:service -> include:lib/services/concerns/**.rb
+
+# Connect with API integrations if service interacts with external APIs
+hint:api_service -> look_for:
+    - HTTP
+    - RestClient
+    - Faraday
+    - api_key
+    - Net::HTTP
+    - HTTParty
+
+# Service result patterns
+hint:service_result_patterns -> look_for:
+    - Result.new
+    - Success.new
+    - Failure.new
+    - OpenStruct.new
+    - return { success: true }
+    - return { error: }
+    - ServiceResult.new
+    - Dry::Monads::Result::Success
+    - Dry::Monads::Result::Failure
+    - Success(
+    - Failure(
+
+# Error handling patterns
+hint:service_error_handling -> look_for:
+    - rescue {{ exception_class }} => e
+    - begin/rescue/ensure
+    - errors.add
+    - raise {{ exception_class }}
+    - return failure(
+    - return error(
+
+# Service composition patterns
+hint:service_composition -> look_for:
+    - {{ other_service }}.call
+    - {{ other_service }}.new.call
+    - result = {{ other_service }}.call
+    - chain_services
+
+# Transaction handling
+hint:service_transactions -> look_for:
+    - ActiveRecord::Base.transaction
+    - transaction do
+    - requires_new: true
+    - isolation: :serializable
+    - after_commit
+    - after_rollback
+
+# Testing connections
+context:service -> include:test/services/{{ service_name }}_service_test.rb
+context:service -> include:spec/services/{{ service_name }}_service_spec.rb
+
+# Dependency injection patterns
+hint:service_dependencies -> look_for:
+    - initialize({{ dependencies }})
+    - attr_reader :{{ dependency }}
+    - @{{ dependency }} = {{ dependency }}
+    - def initialize({{ dependency }}: nil)
+    - def self.call({{ dependencies }})
+
+# Command pattern
+hint:command_pattern -> look_for:
+    - def call
+    - def self.call
+    - private
+    - attr_reader
+
+# Interactor pattern
+hint:interactor_pattern -> look_for:
+    - include Interactor
+    - def call
+    - context.fail!
+    - context.{{ attribute }} =
+    - include Interactor::Organizer
+    - organize {{ interactor_classes }}
+    - before
+    - after
+    - around
+    - rollback

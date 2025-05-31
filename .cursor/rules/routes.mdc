@@ -1,0 +1,109 @@
+---
+description: Routes-specific rules for Ruby on Rails projects
+globs: config/routes.rb
+alwaysApply: false
+---
+# Routes-specific rules for Ruby on Rails projects
+
+# Identify the routes file
+pattern:config/routes.rb -> routes
+pattern:config/routes/**.rb -> route_segment
+
+# Include context for application controller and related config files
+context:routes -> include:app/controllers/application_controller.rb
+context:routes -> include:config/application.rb
+context:routes -> include:config/environments/development.rb
+context:routes -> include:config/initializers/inflections.rb
+
+# Connect routes with their controllers
+hint:route_controller_association -> look_for:
+    - resources :{{ controller_name }}
+    - resource :{{ controller_name }}
+    - controller :{{ controller_name }}
+    - to: "{{ controller_name }}#
+    - get "{{ path }}", to: "{{ controller_name }}#{{ action }}"
+    - post "{{ path }}", to: "{{ controller_name }}#{{ action }}"
+    - put "{{ path }}", to: "{{ controller_name }}#{{ action }}"
+    - patch "{{ path }}", to: "{{ controller_name }}#{{ action }}"
+    - delete "{{ path }}", to: "{{ controller_name }}#{{ action }}"
+
+# Navigation shortcuts for routes file
+jump:routes -> config/routes.rb
+jump:api_routes -> config/routes/api.rb
+
+# Rules for route-related DSL methods
+hint:route_methods -> include:
+    - resources
+    - resource
+    - collection
+    - member
+    - namespace
+    - scope
+    - get
+    - post
+    - put
+    - patch
+    - delete
+    - match
+    - root
+    - concern
+    - constraints
+    - direct
+    - draw
+    - mount
+    - resolve
+
+# Help with nested routes
+hint:nested_routes -> look_for:
+    - resources :{{ parent }} do
+    - namespace :{{ namespace }} do
+    - scope :{{ scope_name }} do
+    - scope module: :{{ module_name }} do
+    - scope path: :{{ path_name }} do
+    - concern :{{ concern_name }}
+    - constraints {{ constraint_name }}: do
+
+# Route constraint hints
+hint:route_constraints -> look_for:
+    - constraints
+    - only: [:{{ actions }}]
+    - except: [:{{ actions }}]
+    - format: :{{ format }}
+    - defaults: { {{ defaults }} }
+    - as: :{{ route_name }}
+    - path: "{{ custom_path }}"
+
+# API versioning patterns
+hint:api_versioning -> look_for:
+    - namespace :api do
+    - namespace :v{{ version_number }} do
+    - scope module: :v{{ version_number }} do
+    - constraints ApiVersion.new({{ version_number }}) do
+
+# Engine mounting patterns
+hint:engine_mounting -> look_for:
+    - mount {{ engine_name }}::Engine, at: "{{ path }}"
+    - mount {{ engine_name }}, at: "{{ path }}"
+    - mount_engine {{ engine_name }}, at: "{{ path }}"
+    - mount ActionCable.server => "/cable"
+    - mount GraphiQL::Rails::Engine, at: "/graphiql" if Rails.env.development?
+
+# Connect with engine routes if applicable
+context:routes -> include:config/routes/**.rb
+context:routes -> include:lib/engines/*/config/routes.rb
+
+# Connect routes with URL helpers
+context:routes -> include:app/helpers/url_helper.rb
+context:routes -> include:app/helpers/application_helper.rb
+
+# Custom route helpers
+hint:custom_route_helpers -> look_for:
+    - as: :{{ helper_name }}
+    - {{ helper_name }}_path
+    - {{ helper_name }}_url
+
+# Route concerns
+hint:route_concerns -> look_for:
+    - concern :{{ concern_name }} do
+    - concerns :{{ concern_name }}
+    - concerns [:{{ concern_name }}, :{{ another_concern }}]

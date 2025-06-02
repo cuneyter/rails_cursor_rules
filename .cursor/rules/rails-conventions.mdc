@@ -1,0 +1,151 @@
+---
+description: Rails conventions and best practices
+globs:
+alwaysApply: true
+---
+
+## Application Creation
+* You MUST NOT try and generate a Rails app from scratch on your own by generating each file. For a NEW app you MUST use `rails new` first to generate all of the boilerplate files necessary.
+* Create an app in the current directory with `rails new .`
+* Use Tailwind CSS for styling: `rails new myapp --css tailwind`
+* Use Ruby 3.2+ and Rails 8.0+ practices.
+* Use the default Minitest approach for testing, do not use RSpec.
+* Default to using SQLite in development. `rails new` will do this automatically but take care if you write any custom SQL that it is SQLite compatible.
+* Dev container support: `rails new myapp --devcontainer` (only use if requested directly)
+
+## Core Rails Conventions
+* Adhere to MVC conventions: singular model names (e.g., Product) map to plural tables (products); controllers are plural.
+* Guard against incapable browsers accessing controllers with `allow_browser versions: :modern`
+* Rails apps have directories: app, config, db, lib, etc.
+
+## Running Applications
+* `bin/rails server` runs the current app locally
+* `bin/dev` runs the app with background jobs, Tailwind CSS watcher, and other services from `Procfile.dev`
+* Rails 8 introduces a `script` folder for one-off scripts: `bin/rails generate script my_script` then run with `bundle exec ruby script/my_script.rb`
+* Use `bin/rails runner` for one-liners: `bin/rails runner "user = User.new; user.email_address='x@x.com'; user.save"`
+
+## Asset Pipeline & JavaScript
+* Rails 8 uses Propshaft for assets (not Sprockets)
+* Import maps are the default for JavaScript: see `config/importmap.rb`
+* Hotwire (Turbo/Stimulus) is the default JavaScript framework
+
+## Models & Database
+* Create models: `bin/rails generate model Product name:string`
+* Use Rails' built-in generators for models, controllers, and migrations
+* Run migrations: `bin/rails db:migrate`
+* Use `find_or_create_by` to check if a record exists and create if not
+* Models can have enums: `enum :status, [:shipped, :being_packed, :complete, :cancelled]`
+* Use `annotate` in query chains for debugging: `User.annotate("selecting user names").select(:name)`
+* Efficient batch processing: `Customer.where(weekly_subscriber: true).find_each do |customer|`
+
+### Querying
+* Basic queries: `Product.all`, `Product.where(name: "Pants")`, `Product.order(name: :asc)`
+* Parameterized queries: `Book.where("title = ?", params[:title])`
+* Date ranges: `Book.where("created_at >= :start_date AND created_at <= :end_date", { start_date: params[:start_date], end_date: params[:end_date] })`
+* Range syntax: `Book.where(created_at: (Time.now.midnight - 1.day)..Time.now.midnight)`
+* IN clause: `Customer.where(orders_count: [1, 3, 5])` and `Customer.where.not(orders_count: [1, 3, 5])`
+* OR conditions: `Customer.where(last_name: "Smith").or(Customer.where(orders_count: [1, 3, 5]))`
+* Multiple ordering: `Book.order(title: :asc, created_at: :desc)`
+* Limit/offset: `Customer.limit(5).offset(30)`
+* Grouping: `Order.select("created_at").group("created_at")` and `Order.group(:status).count`
+* Having: `Order.select("created_at as ordered_date, sum(total) as total_price").group("created_at").having("sum(total) > ?", 200)`
+* Scopes: `scope :in_print, -> { where(out_of_print: false) }`
+* Check existence: `Customer.exists?(1)`, `any?`, `many?`
+
+### Validations & Associations
+* Validations: `validates :name, presence: true`, `validates :inventory_count, numericality: { greater_than_or_equal_to: 0 }`
+* Associations: `has_many :books, dependent: :destroy`, `belongs_to :author`, `has_one`, `has_many :through`, `has_and_belongs_to_many`
+
+### Callbacks
+* Available callbacks: `after_create`, `before_validation`, `after_validation`, `before_save`, `before_create`, `after_create`, `before_destroy`, `after_initialize`, `after_find`, `after_touch`
+* Conditional callbacks: `before_save :normalize_card_number, if: :paid_with_card?`
+* Lambda conditions: `before_save :normalize_card_number, if: ->(order) { order.paid_with_card? }`
+* Halting execution: `throw :abort if total_price < 0`
+
+## Controllers & Routing
+* Use RESTful routing: `resources :products` (generates all 7 RESTful routes)
+* Custom routes: `get "/products", to: "products#index"` in `config/routes.rb`
+* Strong parameters: `params.expect(product: [ :name, :description ])` (Rails 8 syntax)
+* Use `before_action` callbacks: `before_action :set_product, only: %i[ show edit update ]`
+* View routes: `bin/rails routes`
+
+## Views & Templates
+* Use ERB: `<%= %>` for output, `<% %>` for logic
+* Render partials: `<%= render "form", product: @product %>`
+* Partial with locals: `<%= render partial: "product", locals: { product: @product } %>`
+* Convention shortcut: `<%= render @product %>` (Rails infers the partial)
+* Collection rendering: `<%= render partial: "product", collection: @products %>`
+* Strict Locals (Rails 8): `<%# locals: (article:, theme: "light") -%>` at top of partials
+
+## Authentication (Rails 8)
+* Built-in authentication generator: `bin/rails generate authentication`
+* Creates User and Session models (run migrations after)
+* Default user fields: `email_address`, `password`, `password_confirmation`
+* Logout: `<%= button_to "Log out", session_path, method: :delete if authenticated? %>`
+* Allow unauthenticated access: `allow_unauthenticated_access only: %i[ index show ]`
+* View helpers: `authenticated?` for conditional display
+
+## Rails 8 Features
+### Solid Stack (Redis-free alternatives)
+* Solid Queue: Database-backed Active Job backend for background jobs
+* Solid Cable: Database-backed ActionCable adapter for WebSockets
+* Solid Cache: Database-backed ActiveSupport::Cache::Store
+
+### File Uploads & Rich Text
+* Active Storage: Built-in file upload library
+  - Attach files: `has_one_attached :featured_image`, `has_many_attached :documents`
+  - Form fields: `<%= form.file_field :featured_image, accept: "image/*" %>`
+  - Display: `<%= image_tag @product.featured_image if @product.featured_image.attached? %>`
+  - Controller handling: `uploaded_file = params[:csv_file]`; check with `uploaded_file.present?`
+* Action Text: Rich text editing out of the box
+  - Install: `bin/rails action_text:install` (then bundle and migrate)
+  - Model: `has_rich_text :description`
+  - Form: `<%= form.rich_text_area :description %>`
+
+### Generators & Scaffolding
+* Scaffold generation: `bin/rails generate scaffold Product name:string` creates model, controller, views
+* Controller generation: `bin/rails generate controller Products index --skip-routes`
+* Script generation: `bin/rails generate script my_script`
+
+### Form Helpers (Rails 8)
+* Text fields: `<%= form.text_field :name %>`, `<%= form.email_field :address %>`, `<%= form.password_field :password %>`
+* Date/time: `<%= form.date_field :born_on %>`, `<%= form.time_field :started_at %>`
+* Numbers: `<%= form.number_field :price, in: 1.0..20.0, step: 0.5 %>`
+* Select fields: `<%= form.select :city, ["Berlin", "Chicago", "Madrid"] %>`
+* Radio buttons: `<%= form.radio_button :flavor, "chocolate_chip" %>`
+* Collection helpers: `<%= form.collection_radio_buttons :city_id, City.order(:name), :id, :name %>`
+
+## Performance & Optimization
+* View caching: `<% cache @product do %><h1><%= @product.name %></h1><% end %>`
+* Use `unscope` method to remove specific query conditions
+* Default scopes: `default_scope { where(active: true) }`
+* Custom SQL when necessary: `Customer.find_by_sql("SELECT * FROM customers INNER JOIN orders...")`
+
+## Internationalization (i18n)
+* Use `t` helper: `<h1><%= t "hello" %></h1>`
+* Locale files: `config/locales/en.yml`, `config/locales/es.yml` (YAML format)
+* Relative lookups: `<%= t ".title" %>` (matches controller/view structure)
+* Locale switching: `around_action :switch_locale` with `I18n.with_locale(locale, &action)`
+
+## Action Mailer
+* Generate mailers: `bin/rails g mailer Product in_stock`
+* Send emails: `mail to: params[:subscriber].email`
+* Views: `app/views/product_mailer/in_stock.text.erb`
+
+## Code Organization
+* Extract concerns: `app/models/product/notifications.rb` with `module Product::Notifications`
+* Include concerns: `include Notifications` in models
+* Use `extend ActiveSupport::Concern` in modules
+* Token generation: `generates_token_for :unsubscribe` and lookup with `find_by_token_for(:unsubscribe, params[:token])`
+
+## Testing & Quality
+* Use Minitest (default), not RSpec
+* Code quality: `bin/rubocop`
+* Security scanning: `bin/brakeman`
+
+## Deployment
+* Kamal: Built-in deployment tool using Docker containers (configure `config/deploy.yml`)
+* Only use if explicitly requested by user
+
+## Important Reminder
+* ALWAYS use `rails new` for new applications - never create Rails apps manually file by file
